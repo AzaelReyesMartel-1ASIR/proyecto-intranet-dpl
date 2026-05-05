@@ -1,0 +1,15 @@
+network:
+  version: 2
+  ethernets:
+    enp0s3:
+      dhcp4: true
+    enp0s8:
+      addresses:
+        - 192.168.100.20/24
+      nameservers:
+        addresses:
+          - 192.168.100.10
+        search:
+          - centro.local
+  version: 2
+  renderer: NetworkManager

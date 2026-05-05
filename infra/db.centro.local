@@ -1,0 +1,18 @@
+;
+; BIND data file for local loopback interface
+;
+$TTL	604800
+@	IN	SOA	srvinfra.centro.local. root.centro.local. (
+			      2		; Serial
+			 604800		; Refresh
+			  86400		; Retry
+			2419200		; Expire
+			 604800 )	; Negative Cache TTL
+;
+@	IN	NS	srvinfra.centro.local.
+srvinfra	IN	A	192.168.100.10
+
+; Registros obligatorios del proyecto
+ldap	IN	A	192.168.100.10
+intranet	IN	A	192.168.100.20
+ftp	IN	A	192.168.100.20

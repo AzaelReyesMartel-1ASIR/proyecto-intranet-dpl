@@ -1,0 +1,51 @@
+#OUs
+dn: ou=usuarios,dc=centro,dc=local
+objectClass: organizationalUnit
+ou: usuarios
+
+dn: ou=grupos,dc=centro,dc=local
+objectClass: organizationalUnit
+ou: grupos
+
+# Usuarios Alumnos
+dn: uid=alumno1,ou=usuarios,dc=centro,dc=local
+objectClass: inetOrgPerson
+uid: alumno1
+sn: Alumno
+cn: Aza
+userPassword: alumno1password
+
+dn: uid=alumno2,ou=usuarios,dc=centro,dc=local
+objectClass: inetOrgPerson
+uid: alumno2
+sn: Alumno
+cn: Josu
+userPassword: alumno2password
+
+# Usuarios Profesores
+dn: uid=profesor1,ou=usuarios,dc=centro,dc=local
+objectClass: inetOrgPerson
+uid: profesor1
+sn: Profesor
+cn: Kenneth
+userPassword: profe1password
+
+dn: uid=profesor2,ou=usuarios,dc=centro,dc=local
+objectClass: inetOrgPerson
+uid: profesor2
+sn: Profesor
+cn: Raquel
+userPassword: profe2password
+
+# Crear grupos y asignar miembros
+dn: cn=alumnos,ou=grupos,dc=centro,dc=local
+objectClass: groupOfNames
+cn: alumnos
+member: uid=alumno1,ou=usuarios,dc=centro,dc=local
+member: uid=alumno2,ou=usuarios,dc=centro,dc=local
+
+dn: cn=profesores,ou=grupos,dc=centro,dc=local
+objectClass: groupOfNames
+cn: profesores
+member: uid=profesor1,ou=usuarios,dc=centro,dc=local
+member: uid=profesor2,ou=usuarios,dc=centro,dc=local
