@@ -105,7 +105,7 @@ ldapadd -x -D "cn=admin,dc=centro,dc=local" -W -f carga_inicial.ldif -c
 ```
 
 **4. Inyectar los atributos POSIX para compatibilidad nativa con FTP:**
-Para evitar conflictos de permisos, mapeamos los usuarios al UID/GID de Apache (www-data). El contenido del parche se encuentra en el archivo [parche_masivo.ldif](../infra/parche_masivo.ldif).
+Para evitar conflictos de permisos, mapeamos los usuarios al UID/GID de Apache (www-data). El contenido del parche se encuentra en el archivo [parche_masivo.ldif](https://github.com/AzaelReyesMartel-1ASIR/proyecto-intranet-dpl/blob/main/infra/parche_masivo.ldif).
 
 Aplicamos el parche en la base de datos:
 ```bash
