@@ -1,0 +1,67 @@
+dn: uid=alumno1,ou=usuarios,dc=centro,dc=local
+changetype: modify
+add: objectClass
+objectClass: posixAccount
+-
+add: uidNumber
+uidNumber: 2001
+-
+add: gidNumber
+gidNumber: 33
+-
+add: homeDirectory
+homeDirectory: /srv/ftp/publicaciones
+-
+add: loginShell
+loginShell: /bin/false
+
+dn: uid=alumno2,ou=usuarios,dc=centro,dc=local
+changetype: modify
+add: objectClass
+objectClass: posixAccount
+-
+add: uidNumber
+uidNumber: 2002
+-
+add: gidNumber
+gidNumber: 33
+-
+add: homeDirectory
+homeDirectory: /srv/ftp/publicaciones
+-
+add: loginShell
+loginShell: /bin/false
+
+dn: uid=profesor1,ou=usuarios,dc=centro,dc=local
+changetype: modify
+add: objectClass
+objectClass: posixAccount
+-
+add: uidNumber
+uidNumber: 2003
+-
+add: gidNumber
+gidNumber: 33
+-
+add: homeDirectory
+homeDirectory: /srv/ftp/publicaciones
+-
+add: loginShell
+loginShell: /bin/false
+
+dn: uid=profesor2,ou=usuarios,dc=centro,dc=local
+changetype: modify
+add: objectClass
+objectClass: posixAccount
+-
+add: uidNumber
+uidNumber: 2004
+-
+add: gidNumber
+gidNumber: 33
+-
+add: homeDirectory
+homeDirectory: /srv/ftp/publicaciones
+-
+add: loginShell
+loginShell: /bin/false

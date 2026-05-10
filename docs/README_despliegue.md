@@ -51,6 +51,7 @@ network:
 ```bash
 sudo apt update && sudo apt install bind9 bind9utils bind9-doc -y
 ```
+
 **2. Declarar la zona en /etc/bind/named.conf.local:**
 ```bash
 zone "centro.local" {
@@ -58,29 +59,33 @@ zone "centro.local" {
     file "/etc/bind/db.centro.local";
 };
 ```
+
 **3. Crear el archivo de zona /etc/bind/db.centro.local**
 ```bash
 ;
 ; BIND data file for local loopback interface
 ;
-$TTL	604800
-@	IN	SOA	srvinfra.centro.local. root.centro.local. (
-			      2		; Serial
-			 604800		; Refresh
-			  86400		; Retry
-			2419200		; Expire
-			 604800 )	; Negative Cache TTL
+$TTL  604800
+@ IN  SOA srvinfra.centro.local. root.centro.local. (
+            2   ; Serial
+       604800   ; Refresh
+        86400   ; Retry
+      2419200   ; Expire
+       604800 ) ; Negative Cache TTL
 ;
-@	IN	NS	srvinfra.centro.local.
-srvinfra	IN	A	192.168.100.10
+@ IN  NS  srvinfra.centro.local.
+srvinfra  IN  A 192.168.100.10
 
 ; Registros obligatorios del proyecto
-ldap	IN	A	192.168.100.10
-intranet	IN	A	192.168.100.20
-ftp	IN	A	192.168.100.20
+ldap  IN  A 192.168.100.10
+intranet  IN  A 192.168.100.20
+ftp IN  A 192.168.100.20
 ```
 
-**4. Reiniciar servicio: `sudo systemctl restart bind9`**
+**4. Reiniciar servicio:**
+```bash
+sudo systemctl restart bind9
+```
 
 ### 1.2 Directorio (OpenLDAP)
 
@@ -88,13 +93,23 @@ ftp	IN	A	192.168.100.20
 ```bash
 sudo apt install slapd ldap-utils -y
 ```
-**2. Reconfigurar el paquete para establecer el Base DN (`dc=centro,dc=local`) y la contraseña de administrador (`password`):**
+
+**2. Reconfigurar el paquete para establecer el Base DN (dc=centro,dc=local) y la contraseña de administrador (password):**
 ```bash
 sudo dpkg-reconfigure slapd
 ```
-**3. Inyectar la estructura de usuarios y grupos:**
+
+**3. Inyectar la estructura base de usuarios y grupos:**
 ```bash
 ldapadd -x -D "cn=admin,dc=centro,dc=local" -W -f carga_inicial.ldif -c
+```
+
+**4. Inyectar los atributos POSIX para compatibilidad nativa con FTP:**
+Para evitar conflictos de permisos, mapeamos los usuarios al UID/GID de Apache (www-data). El contenido del parche se encuentra en el archivo [parche_masivo.ldif](../infra/parche_masivo.ldif).
+
+Aplicamos el parche en la base de datos:
+```bash
+ldapmodify -x -D "cn=admin,dc=centro,dc=local" -W -f parche_masivo.ldif
 ```
 
 ## 2. Servidor Apache y FTP (srv-web-ftp)
@@ -115,7 +130,7 @@ sudo chown -R www-data:www-data /var/www/intranet
 ```
 
 **3. Crear y configurar el VirtualHost en /etc/apache2/sites-available/intranet.conf:**
-```bash
+```apache
 <VirtualHost *:80>
     ServerName intranet.centro.local
     DocumentRoot /var/www/intranet
@@ -149,20 +164,61 @@ sudo a2dissite 000-default.conf
 sudo systemctl restart apache2
 ```
 
-### 2.2 Servidor FTP (VSFTPD)
+### 2.2 Servidor FTP (ProFTPD integrado con LDAP)
+Tras evaluar vsftpd, se ha optado por implementar ProFTPD debido a su integración nativa y limpia con OpenLDAP sin necesidad de alterar el sistema con pasarelas locales.
 
-**`(Nota para Josue: Aquí debes documentar los comandos que utilices para instalar vsftpd, crear la carpeta /srv/ftp/publicaciones con sus permisos, y las líneas clave que modifiques en el /etc/vsftpd.conf).`**
+**1. Instalar el servicio y su módulo LDAP:**
+```bash
+sudo apt install proftpd-core proftpd-mod-ldap -y
+```
+
+**2. Habilitar el módulo LDAP:**
+```bash
+sudo sed -i 's/^#\s*LoadModule\s*mod_ldap.c/LoadModule mod_ldap.c/' /etc/proftpd/modules.conf
+```
+
+**3. Configurar la conexión con el servidor LDAP (/etc/proftpd/conf.d/ldap.conf):**
+```bash
+sudo bash -c 'cat <<EOF > /etc/proftpd/conf.d/ldap.conf
+<IfModule mod_ldap.c>
+    AuthOrder mod_ldap.c
+    LDAPServer 192.168.100.10
+    LDAPAuthBinds on
+    LDAPUsers "ou=usuarios,dc=centro,dc=local" "(uid=%v)"
+</IfModule>
+EOF'
+```
+
+**4. Asegurar la jaula y los puertos pasivos (/etc/proftpd/proftpd.conf):**
+```bash
+sudo bash -c 'cat <<EOF >> /etc/proftpd/proftpd.conf
+
+# --- CONFIGURACION CUSTOM INTRANET ---
+RequireValidShell off
+DefaultRoot /srv/ftp/publicaciones
+PassivePorts 40000 50000
+EOF'
+```
+
+**5. Crear directorio de publicación y reiniciar:**
+```bash
+sudo mkdir -p /srv/ftp/publicaciones
+sudo chown -R www-data:www-data /srv/ftp/publicaciones
+sudo chmod -R 775 /srv/ftp/publicaciones
+sudo systemctl restart proftpd
+```
 
 ## 3. Bonus Extra: Automatización y Hardening (deploy.sh)
-
 Para conseguir un entorno seguro y de producción, hemos creado un script que fortifica el servidor web y despliega reglas de cortafuegos (UFW).
 
-**Pasos para ejecutar el Hardening en `srv-web-ftp`:**
+**Pasos para ejecutar el Hardening en srv-web-ftp:**
 
-1. Crear el archivo del script:
-   `nano deploy.sh`
+**1. Crear el archivo del script:**
+```bash
+nano deploy.sh
+```
 
-2. Pegar el siguiente código:
+**2. Pegar el siguiente código:**
 ```bash
 #!/bin/bash
 # ==============================================================================
@@ -199,11 +255,14 @@ sudo systemctl restart apache2
 echo "🛡️ Estado del Firewall:"
 sudo ufw status numbered
 echo "🎉 ¡Hardening completado!"
+```
 
+**3. Dar permisos de ejecución al script:**
+```bash
+chmod +x deploy.sh
+```
 
-3. Dar permisos de ejecución al script:
-   `chmod +x deploy.sh`
-
-4. Ejecutar el script:
-   `sudo ./deploy.sh`
+**4. Ejecutar el script:**
+```bash
+sudo ./deploy.sh
 ```
